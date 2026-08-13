@@ -1,0 +1,16 @@
+{
+  "name": "codex-projectboard",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "board": "node src/phase-1/cli.js",
+    "board:sidebar": "node src/phase-1/sidebar-cli.js",
+    "test": "node --test",
+    "test:unit": "node --test tests/unit/*.test.js",
+    "test:integration": "node --test tests/integration/*.test.js",
+    "probe": "node src/cli.js readonly",
+    "probe:live": "node src/cli.js live"
+  }
+}

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Codex Projectboard</title>
+  <link rel="stylesheet" href="/app.css">
+  <script src="/app.js" defer></script>
+</head>
+<body data-visual-direction="quiet-ops">
+  <div id="fatal-error" class="fatal-error" role="alert" hidden></div>
+  <main id="workspace" class="workspace" hidden>
+    <section class="board-shell" aria-labelledby="project-title">
+      <header class="app-bar">
+        <div class="title-block">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>任务面板</h1>
+            <p id="catalog-summary">正在读取历史任务…</p>
+          </div>
+        </div>
+        <div class="toolbar">
+          <label class="project-picker" for="project-select">
+            <span class="visually-hidden">选择工作目录</span>
+            <select id="project-select"><option value="all-history">全部历史 · 0</option></select>
+          </label>
+          <label class="search-field">
+            <span class="visually-hidden">搜索任务</span>
+            <input id="search-input" type="search" autocomplete="off" placeholder="搜索任务">
+          </label>
+          <label class="archive-filter">
+            <input id="archive-toggle" type="checkbox" checked>
+            <span>含归档</span>
+          </label>
+        </div>
+      </header>
+      <div class="context-row">
+        <div>
+          <h2 id="project-title" tabindex="-1">全部历史</h2>
+          <p id="project-path">所有工作目录</p>
+        </div>
+        <p id="sync-status" aria-live="polite">正在读取本地快照…</p>
+      </div>
+      <section class="attention-rail" aria-labelledby="attention-title">
+        <h3 id="attention-title">需要我处理 <span id="attention-total">0</span></h3>
+        <div id="attention-list" class="attention-list"></div>
+      </section>
+      <nav id="lane-tabs" class="lane-tabs" aria-label="任务状态"></nav>
+      <div id="lanes" class="board-grid" aria-label="五栏任务看板"></div>
+    </section>
+  </main>
+  <dialog id="task-dialog" class="task-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-heading">
+      <div>
+        <p id="dialog-kicker" class="eyebrow">THREAD</p>
+        <h2 id="dialog-title">任务详情</h2>
+      </div>
+      <button id="dialog-close" class="icon-button" type="button" aria-label="关闭详情">×</button>
+    </div>
+    <p id="dialog-attention" class="dialog-attention" hidden></p>
+    <section class="detail-section">
+      <h3>明确下一步</h3>
+      <p id="dialog-next-action"></p>
+    </section>
+    <dl class="detail-grid">
+      <div><dt>任务状态</dt><dd id="dialog-state"></dd></div><div><dt>Codex 状态</dt><dd id="dialog-source-status"></dd></div><div><dt>最后活动</dt><dd id="dialog-updated"></dd></div><div><dt>Projectboard 投影</dt><dd id="dialog-archive"></dd></div>
+    </dl>
+    <section class="detail-section">
+      <h3>原 Codex 任务 ID</h3>
+      <code id="dialog-thread-id" class="thread-id"></code>
+      <p class="muted">当前安全边界不调用未验证的桌面深链；请在 Codex 任务列表中按此 ID 定位。</p>
+    </section>
+  </dialog>
+</body>
+</html>

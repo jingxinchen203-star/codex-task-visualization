@@ -1,0 +1,7 @@
+{
+  "package": { "name": "OpenAI.Codex", "packageFamilyName": "OpenAI.Codex_2p2nqsd0c76g0", "version": "26.730.8199.0", "installLocation": "C:\\Program Files\\WindowsApps\\OpenAI.Codex" },
+  "startApps": [{ "name": "Codex", "appId": "OpenAI.Codex_2p2nqsd0c76g0!App" }],
+  "processes": [{ "pid": 1200, "name": "ChatGPT", "path": null }],
+  "commands": [{ "kind": "Application", "name": "codex.cmd", "source": "E:\\DevTools\\npm-global\\codex.cmd" }],
+  "errors": ["process-path: access denied"]
+}

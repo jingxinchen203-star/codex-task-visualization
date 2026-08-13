@@ -1,0 +1,6 @@
+.worktrees/
+artifacts/
+node_modules/
+src/app-server/generated/
+*.token
+*.nonce
