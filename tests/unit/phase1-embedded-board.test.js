@@ -40,29 +40,29 @@ const appElementIds = [
 ];
 const canonicalLaneIds = ["inbox", "planned", "running", "review", "done"];
 
-function assertQuietOpsDocument(document) {
+function assertDaybreakDocument(document) {
   assert.match(document, /class="app-bar"/u);
   assert.match(document, /class="attention-rail"/u);
   assert.match(document, /class="board-grid"/u);
-  assert.match(document, /data-visual-direction="quiet-ops"/u);
+  assert.match(document, /data-visual-direction="obsidian-silver"/u);
   assert.doesNotMatch(document, /boundary-banner/u);
   assert.doesNotMatch(document, /mode-badge/u);
-  assert.match(document, /--surface:\s*#f7f7f8/iu);
-  assert.match(document, /--ink:\s*#18181b/iu);
-  assert.match(document, /--accent:\s*#2563eb/iu);
+  assert.match(document, /color-scheme:\s*dark/iu);
+  assert.match(document, /--surface:\s*#181818/iu);
+  assert.match(document, /--ink:\s*#e5e3df/iu);
+  assert.match(document, /--accent:\s*#c9c3b8/iu);
   assert.match(document, /grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/iu);
   assert.match(document, /Segoe UI Variable/u);
+  assert.match(document, /Segoe Fluent Icons/u);
   assert.match(document, /@media\s*\(max-width:\s*699px\)/u);
-  assert.match(document, /--muted:\s*#5f6068/iu);
-  assert.match(document, /--attention-ink:\s*#9f1239/iu);
-  assert.match(document, /@media\s*\(prefers-color-scheme:\s*dark\)[\s\S]*--surface:\s*#111113/iu);
-  assert.match(document, /@media\s*\(prefers-color-scheme:\s*dark\)[\s\S]*--attention-ink:\s*#fda4af/iu);
-  assert.doesNotMatch(document, /#151714|#1d201c|#252823/iu);
+  assert.match(document, /--muted:\s*#aaa6a0/iu);
+  assert.match(document, /--attention-ink:\s*#d9ad64/iu);
+  assert.doesNotMatch(document, /prefers-color-scheme:\s*dark/iu);
   assert.match(document, /#attention-total\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
   assert.match(document, /\.attention-item strong\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
-  assert.match(document, /\.task-badge\.attention\s*,\s*\.task-badge\.active\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
+  assert.match(document, /\.task-badge\.active\s*\{[^}]*color:\s*var\(--accent-strong\)/isu);
+  assert.match(document, /\.task-badge\.attention\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
   assert.match(document, /\.dialog-attention\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
-  assert.doesNotMatch(document, /[;{]\s*color:\s*var\(--accent\)/iu);
   assert.match(document, /\.task-card-title,\s*\.task-next\s*\{[^}]*overflow-wrap:\s*anywhere/isu);
   const taskCardRule = /\.task-card\s*\{([^}]*)\}/isu.exec(document);
   assert.ok(taskCardRule, "task cards must have a dedicated visual rule");
@@ -270,16 +270,16 @@ test("static embedded board renders one scriptless exact five-lane snapshot", as
   assert.doesNotMatch(document, /projectboard-drag/u);
   assert.doesNotMatch(document, /codex:\/\/threads/u);
   assert.doesNotMatch(document, /data-projectboard-drop-lane/u);
-  assert.match(document, /Codex 只读 · 本地编排/u);
+  assert.match(document, /只读同步 · 本地编排/u);
   assert.match(document, /Review &lt;script&gt;alert\(1\)&lt;\/script&gt; &amp; history/u);
   assert.match(document, /Inspect &quot;all&quot; metadata/u);
-  assert.match(document, /活动中/u);
+  assert.match(document, /进行中/u);
   assert.match(document, /需要处理 &amp; 核对/u);
   assert.doesNotMatch(document, /<script\b/iu);
   assert.match(document, /script-src 'none'/u);
 
   const built = await buildStaticEmbeddedBoardDocument(snapshot);
-  assertQuietOpsDocument(built);
+  assertDaybreakDocument(built);
   assert.match(built, /\.task-move-option\s*\{/u);
   assert.doesNotMatch(built, /<script\b/iu);
   assert.equal((built.match(/data-projectboard-task-id=/gu) ?? []).length, 1);
@@ -551,7 +551,7 @@ test("embedded UI gives the expanded workspace to five lanes and defaults to all
   assert.match(document, /all-history/u);
   assert.match(document, /全部历史/u);
   for (const threadId of suppliedThreadIds) assert.match(document, new RegExp(threadId, "u"));
-  assertQuietOpsDocument(document);
+  assertDaybreakDocument(document);
   assert.doesNotMatch(document, /turn\/start|thread\/(?:start|archive|delete)/u);
   assert.doesNotMatch(document, /https?:\/\/(?!127\.0\.0\.1(?::\d+)?(?:\/|["']))/u);
   assert.equal(document.includes("project-sidebar"), false);
@@ -568,28 +568,25 @@ test("embedded UI gives the expanded workspace to five lanes and defaults to all
     .map((match) => match[1].toLowerCase());
   const attentionValues = [...document.matchAll(/--attention-ink:\s*(#[0-9a-f]{6})/giu)]
     .map((match) => match[1].toLowerCase());
-  assert.deepEqual(mutedValues, ["#5f6068", "#a1a1aa"]);
-  assert.deepEqual(attentionValues, ["#9f1239", "#fda4af"]);
+  assert.deepEqual(mutedValues, ["#aaa6a0"]);
+  assert.deepEqual(attentionValues, ["#d9ad64"]);
   for (const [foreground, background] of [
-    [mutedValues[0], "#f7f7f8"],
-    [mutedValues[0], "#ededf0"],
-    [mutedValues[1], "#111113"],
-    [mutedValues[1], "#222225"],
-    [attentionValues[0], "#eff6ff"],
-    [attentionValues[1], "#172554"],
+    [mutedValues[0], "#181818"],
+    [mutedValues[0], "#2e2e2e"],
+    [attentionValues[0], "#3a3021"],
   ]) {
     assert.ok(contrastRatio(foreground, background) >= 4.5,
       `${foreground} on ${background} must reach WCAG AA contrast`);
   }
 });
 
-test("embedded application renders Quiet Ops lane lists, empty guidance, and active task emphasis", async () => {
+test("embedded application renders Obsidian Silver lane lists, empty guidance, and active task emphasis", async () => {
   const expectedEmptyMessages = new Map([
-    ["inbox", "没有符合当前筛选的历史任务"],
-    ["planned", "只读目录不会凭标题猜测计划状态"],
-    ["running", "当前没有 Codex 正在执行的任务"],
-    ["review", "等待未来经过安全门槛的明确状态"],
-    ["done", "历史对话仍可在收集箱中完整检索"],
+    ["inbox", "这里很轻，试试调整筛选或搜索"],
+    ["planned", "暂无已规划任务，可以从收集箱整理"],
+    ["running", "当前没有正在推进的任务"],
+    ["review", "成果就绪后会在这里等待确认"],
+    ["done", "完成的任务会在这里留下记录"],
   ]);
   const emptyBoard = await runEmbeddedApplication(boardSnapshot({ tasks: [] }));
 
@@ -617,10 +614,10 @@ test("embedded application renders Quiet Ops lane lists, empty guidance, and act
   assert.deepEqual(card.children.map(({ tagName }) => tagName), ["SPAN", "SPAN", "SPAN"],
     "native button content must remain valid phrasing content");
   assert.equal(card.dataset.active, "true");
-  assert.match(elementText(card), /活动中/u);
-  assert.match(card.attributes.get("aria-label"), /活动中/u);
+  assert.match(elementText(card), /进行中/u);
+  assert.match(card.attributes.get("aria-label"), /正在推进/u);
   assert.ok(descendants(card).some(({ className, textContent }) => (
-    className === "task-badge active" && textContent === "活动中"
+    className === "task-badge active" && textContent === "进行中"
   )));
   assert.notEqual(activeBoard.elements["task-dialog"].open, true);
   card.click();
@@ -720,7 +717,7 @@ test("malformed lane and task-set updates preserve the last good board", async (
       assert.equal(embedded.messages.length, 1, "invalid update must not emit applied");
       assert.equal(embedded.elements.workspace.hidden, false);
       assert.match(elementText(embedded.elements.lanes), /Initial task/u);
-      assert.match(embedded.elements["sync-status"].textContent, /数据已过期/u);
+      assert.match(embedded.elements["sync-status"].textContent, /已保留上次结果/u);
     });
   }
 });
@@ -768,7 +765,7 @@ test("invalid updates keep the last rendered snapshot stale and emit no applied 
   assert.equal(embedded.messages.length, 1, "invalid updates must not be acknowledged");
   assert.equal(embedded.elements.workspace.hidden, false, "the last good board must stay visible");
   assert.match(elementText(embedded.elements.lanes), /Initial task/u);
-  assert.match(embedded.elements["sync-status"].textContent, /数据已过期/u);
+  assert.match(embedded.elements["sync-status"].textContent, /已保留上次结果/u);
   assert.equal(embedded.elements["fatal-error"].hidden, false);
 
   const recovered = boardSnapshot({
@@ -784,7 +781,7 @@ test("invalid updates keep the last rendered snapshot stale and emit no applied 
 
   assert.equal(embedded.messages.length, 2);
   assert.equal(embedded.messages.at(-1).message.type, "projectboard-readonly-applied");
-  assert.doesNotMatch(embedded.elements["sync-status"].textContent, /数据已过期/u);
+  assert.doesNotMatch(embedded.elements["sync-status"].textContent, /已保留上次结果/u);
   assert.equal(embedded.elements["fatal-error"].hidden, true);
   assert.equal(embedded.elements["fatal-error"].textContent, "");
   assert.equal(embedded.elements.workspace.hidden, false);
@@ -802,7 +799,7 @@ test("stale messages bind exactly to the currently rendered snapshot", async () 
   assert.equal(embedded.elements["sync-status"].textContent, normalStatus);
 
   embedded.dispatch({ type: "projectboard-readonly-stale", snapshotId: initial.snapshotId });
-  assert.match(embedded.elements["sync-status"].textContent, /数据已过期/u);
+  assert.match(embedded.elements["sync-status"].textContent, /已保留上次结果/u);
 
   const next = boardSnapshot({
     snapshotId: "b".repeat(64),
@@ -815,12 +812,12 @@ test("stale messages bind exactly to the currently rendered snapshot", async () 
     snapshot: next,
   });
   const refreshedStatus = embedded.elements["sync-status"].textContent;
-  assert.doesNotMatch(refreshedStatus, /数据已过期/u);
+  assert.doesNotMatch(refreshedStatus, /已保留上次结果/u);
 
   embedded.dispatch({ type: "projectboard-readonly-stale", snapshotId: initial.snapshotId });
   assert.equal(embedded.elements["sync-status"].textContent, refreshedStatus);
   embedded.dispatch({ type: "projectboard-readonly-stale", snapshotId: next.snapshotId });
-  assert.match(embedded.elements["sync-status"].textContent, /数据已过期/u);
+  assert.match(embedded.elements["sync-status"].textContent, /已保留上次结果/u);
 });
 
 test("a render failure rolls state and DOM back to the last good snapshot", async () => {
@@ -842,5 +839,5 @@ test("a render failure rolls state and DOM back to the last good snapshot", asyn
   assert.equal(embedded.elements.workspace.hidden, false);
   assert.match(elementText(embedded.elements.lanes), /Initial task/u);
   assert.doesNotMatch(elementText(embedded.elements.lanes), /Must not replace old view/u);
-  assert.match(embedded.elements["sync-status"].textContent, /数据已过期/u);
+  assert.match(embedded.elements["sync-status"].textContent, /已保留上次结果/u);
 });

@@ -86,11 +86,11 @@ test("readonly projection creates five stable lanes without inventing planned or
   assert.equal(running.title, "Waiting for a decision");
   assert.equal(running.archived, false);
   assert.deepEqual(running.attention, { kind: "user-input", label: "等待你的输入" });
-  assert.equal(running.nextAction, "回到原 Codex 任务并提供所需信息");
+  assert.equal(running.nextAction, "回到原任务，补充 Codex 需要的信息");
 
   const archived = project.lanes.find(({ id }) => id === "inbox").tasks.find(({ id }) => id === "thread-4");
   assert.equal(archived.archived, true);
-  assert.equal(archived.nextAction, "已导入归档，尚未整理");
+  assert.equal(archived.nextAction, "可以整理到更合适的任务栏");
   assert.equal(JSON.stringify(archived).includes("private preview"), false);
 
   const other = snapshot.projects.find(({ workspace }) => workspace === "C:\\Other");

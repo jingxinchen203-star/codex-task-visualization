@@ -3,11 +3,11 @@ import { win32 as path } from "node:path";
 import { validateLaneOverrides } from "./lane-overrides.js";
 
 export const BOARD_LANES = Object.freeze([
-  Object.freeze({ id: "inbox", label: "收集箱", description: "尚未形成可靠计划的导入任务" }),
-  Object.freeze({ id: "planned", label: "已规划", description: "目标与验收标准已经明确" }),
-  Object.freeze({ id: "running", label: "执行中", description: "Codex 当前存在活动状态" }),
-  Object.freeze({ id: "review", label: "待验收", description: "具备完整验证事实，等待人工确认" }),
-  Object.freeze({ id: "done", label: "完成", description: "已经由用户明确验收" }),
+  Object.freeze({ id: "inbox", label: "收集箱", description: "新任务与尚未归类的历史" }),
+  Object.freeze({ id: "planned", label: "已规划", description: "目标清楚，准备开始" }),
+  Object.freeze({ id: "running", label: "执行中", description: "Codex 正在推进" }),
+  Object.freeze({ id: "review", label: "待验收", description: "成果就绪，等待确认" }),
+  Object.freeze({ id: "done", label: "完成", description: "已经确认并留下记录" }),
 ]);
 
 const READ_ONLY_METHODS = new Set(["initialize", "initialized", "account/read", "thread/list"]);
@@ -90,12 +90,12 @@ function laneFor(status) {
 }
 
 function nextActionFor({ archived, status, activeFlags }) {
-  if (activeFlags.includes("waitingOnApproval")) return "回到原 Codex 任务检查并处理审批";
-  if (activeFlags.includes("waitingOnUserInput")) return "回到原 Codex 任务并提供所需信息";
-  if (status === "systemError") return "打开原 Codex 任务检查异常状态";
-  if (status === "active") return "Codex 正在处理；此看板不会发送任何控制命令";
-  if (archived) return "已导入归档，尚未整理";
-  return "打开原 Codex 任务确认下一步";
+  if (activeFlags.includes("waitingOnApproval")) return "回到原任务，确认这次审批";
+  if (activeFlags.includes("waitingOnUserInput")) return "回到原任务，补充 Codex 需要的信息";
+  if (status === "systemError") return "回到原任务，查看 Codex 当前状态";
+  if (status === "active") return "Codex 正在推进，无需额外操作";
+  if (archived) return "可以整理到更合适的任务栏";
+  return "回到原任务，决定下一步";
 }
 
 function taskFromThread(thread, archived, project, laneOverrides) {

@@ -6,18 +6,18 @@ const laneLabels = new Map([
   ["done", "完成"],
 ]);
 const emptyMessages = new Map([
-  ["inbox", "没有符合当前筛选的历史任务"],
-  ["planned", "只读目录不会凭标题猜测计划状态"],
-  ["running", "当前没有 Codex 正在执行的任务"],
-  ["review", "等待未来经过安全门槛的明确状态"],
-  ["done", "历史对话仍可在收集箱中完整检索"],
+  ["inbox", "这里很轻，试试调整筛选或搜索"],
+  ["planned", "暂无已规划任务，可以从收集箱整理"],
+  ["running", "当前没有正在推进的任务"],
+  ["review", "成果就绪后会在这里等待确认"],
+  ["done", "完成的任务会在这里留下记录"],
 ]);
 const canonicalLaneIds = new Set(laneLabels.keys());
 const sourceLabels = new Map([
-  ["notLoaded", "未载入"],
+  ["notLoaded", "未同步"],
   ["idle", "空闲"],
-  ["systemError", "系统异常"],
-  ["active", "活动中"],
+  ["systemError", "需要检查"],
+  ["active", "正在推进"],
 ]);
 
 const elements = {
@@ -65,8 +65,29 @@ function formatDate(timestamp) {
   const milliseconds = timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp;
   const date = new Date(milliseconds);
   if (Number.isNaN(date.getTime())) return "时间未知";
+  const snapshotDate = new Date(state.snapshot?.generatedAt ?? Date.now());
+  const startOfDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const startOfSnapshot = new Date(snapshotDate.getFullYear(), snapshotDate.getMonth(), snapshotDate.getDate()).getTime();
+  const dayDifference = Math.round((startOfSnapshot - startOfDate) / 86_400_000);
+  const time = new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+  if (dayDifference === 0) return `今天 ${time}`;
+  if (dayDifference === 1) return `昨天 ${time}`;
   return new Intl.DateTimeFormat("zh-CN", {
-    month: "short",
+    month: "numeric",
+    day: "numeric",
+  }).format(date);
+}
+
+function formatFullDate(timestamp) {
+  const milliseconds = timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp;
+  const date = new Date(milliseconds);
+  if (Number.isNaN(date.getTime())) return "时间未知";
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "long",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
@@ -95,10 +116,11 @@ function visibleTasks(tasks) {
   });
 }
 
-function badge(label, className = "") {
+function badge(label, className = "", titleValue = "") {
   const value = document.createElement("span");
   value.className = `task-badge ${className}`.trim();
   text(value, label);
+  if (titleValue) value.setAttribute("title", titleValue);
   return value;
 }
 
@@ -116,7 +138,7 @@ function showTask(project, task) {
   text(elements.dialogState, laneLabels.get(task.state) ?? task.state);
   text(elements.dialogSourceStatus, sourceLabels.get(task.sourceStatus) ?? task.sourceStatus);
   text(elements.dialogUpdated, formatDate(task.updatedAt));
-  text(elements.dialogArchive, task.archived ? "已归档导入" : "当前 Codex 列表");
+  text(elements.dialogArchive, task.archived ? "从 Codex 归档导入" : "当前 Codex 列表");
   text(elements.dialogThreadId, task.threadId);
   elements.dialog.showModal();
 }
@@ -140,7 +162,7 @@ function renderAttention(project) {
   if (tasks.length === 0) {
     const empty = document.createElement("span");
     empty.className = "attention-empty";
-    text(empty, "当前项目没有可由线程元数据确认的注意项");
+    text(empty, "现在没有需要你接手的任务");
     elements.attentionList.append(empty);
     return;
   }
@@ -185,7 +207,8 @@ function taskCard(project, task) {
   card.className = "task-card";
   const active = task.sourceStatus === "active";
   if (active) card.dataset.active = "true";
-  card.setAttribute("aria-label", `${task.title}，${laneLabels.get(task.state)}${active ? "，活动中" : ""}${task.attention ? `，${task.attention.label}` : ""}`);
+  card.dataset.state = task.state;
+  card.setAttribute("aria-label", `${task.title}，${laneLabels.get(task.state)}${active ? "，正在推进" : ""}${task.attention ? `，${task.attention.label}` : ""}`);
   const title = document.createElement("span");
   title.className = "task-card-title";
   text(title, task.title);
@@ -194,14 +217,14 @@ function taskCard(project, task) {
   text(next, task.nextAction);
   const meta = document.createElement("span");
   meta.className = "task-meta";
+  if (active) meta.append(badge("进行中", "active"));
+  if (task.attention) meta.append(badge(task.attention.label, "attention"));
   if (project.id === state.snapshot.aggregate?.id) {
     const origin = sourceProject(task);
     if (origin) meta.append(badge(origin.name, "project"));
   }
-  if (active) meta.append(badge("活动中", "active"));
-  if (task.attention) meta.append(badge(task.attention.label, "attention"));
-  if (task.archived) meta.append(badge("导入归档", "archived"));
-  meta.append(badge(formatDate(task.updatedAt)));
+  if (task.archived) meta.append(badge("已归档", "archived"));
+  meta.append(badge(formatDate(task.updatedAt), "time", formatFullDate(task.updatedAt)));
   card.append(title, next, meta);
   card.addEventListener("click", () => showTask(project, task));
   item.append(card);
@@ -218,6 +241,7 @@ function renderLanes(project) {
     region.setAttribute("aria-label", `${project.name}，第 ${project.lanes.indexOf(lane) + 1}/5 列，${lane.label}`);
     const heading = document.createElement("div");
     heading.className = "lane-heading";
+    heading.dataset.lane = lane.id;
     const label = document.createElement("div");
     const title = document.createElement("h3");
     text(title, lane.label);
@@ -264,8 +288,9 @@ function render() {
     return;
   }
   state.projectId = project.id;
-  text(elements.projectTitle, project.name);
-  text(elements.projectPath, project.workspace);
+  const aggregateSelected = project.id === state.snapshot.aggregate?.id;
+  text(elements.projectTitle, aggregateSelected ? "全部任务" : project.name);
+  text(elements.projectPath, aggregateSelected ? "跨项目工作视图" : project.workspace);
   renderAttention(project);
   renderLaneTabs(project);
   renderLanes(project);
@@ -275,7 +300,8 @@ function fail(message) {
   elements.fatalError.hidden = false;
   text(elements.fatalError, message);
   elements.workspace.hidden = true;
-  text(elements.syncStatus, "只读快照不可用");
+  text(elements.syncStatus, "本地快照暂不可用");
+  elements.syncStatus.dataset.stale = "true";
 }
 
 function isRecord(value) {
@@ -386,14 +412,15 @@ function renderSyncStatus() {
     minute: "2-digit",
     second: "2-digit",
   }).format(new Date(state.snapshot.generatedAt));
+  elements.syncStatus.dataset.stale = String(state.stale);
   text(elements.syncStatus, state.stale
-    ? `数据已过期 · 最后快照 ${timestamp}`
-    : `快照 ${timestamp}`);
+    ? `已保留上次结果 · ${timestamp}`
+    : `已同步 ${timestamp}`);
 }
 
 function renderSnapshot() {
   renderSyncStatus();
-  text(elements.catalogSummary, `${state.snapshot.summary.projectCount} 个项目 · ${state.snapshot.summary.taskCount} 个历史任务 · ${state.snapshot.summary.archivedThreadCount} 个已归档`);
+  text(elements.catalogSummary, `${state.snapshot.summary.projectCount} 个项目 · ${state.snapshot.summary.taskCount} 个任务 · ${state.snapshot.summary.archivedThreadCount} 个归档`);
   elements.workspace.hidden = false;
   render();
 }
@@ -454,6 +481,13 @@ elements.search.addEventListener("input", () => {
   state.query = elements.search.value.trim();
   render();
 });
+elements.search.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || elements.search.value.length === 0) return;
+  event.preventDefault();
+  elements.search.value = "";
+  state.query = "";
+  render();
+});
 elements.projectSelect.addEventListener("change", () => {
   state.projectId = elements.projectSelect.value;
   const project = selectedProject();
@@ -470,6 +504,11 @@ elements.dialog.addEventListener("click", (event) => {
   if (event.target === elements.dialog) elements.dialog.close();
 });
 narrowLayout.addEventListener("change", applyLaneVisibility);
+globalThis.addEventListener("keydown", (event) => {
+  if (!(event.ctrlKey || event.metaKey) || event.key.toLocaleLowerCase("en-US") !== "k") return;
+  event.preventDefault();
+  elements.search.focus();
+});
 globalThis.addEventListener("message", (event) => {
   if (globalThis.parent === globalThis || event.source !== globalThis.parent) return;
   if (event.data?.type === "projectboard-readonly-stale") {

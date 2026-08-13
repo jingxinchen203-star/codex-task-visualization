@@ -20,29 +20,31 @@ const snapshot = Object.freeze({
   projects: [],
 });
 
-function assertQuietOpsDocument(document) {
+function assertDaybreakDocument(document) {
   assert.match(document, /class="app-bar"/u);
   assert.match(document, /class="attention-rail"/u);
   assert.match(document, /class="board-grid"/u);
-  assert.match(document, /data-visual-direction="quiet-ops"/u);
+  assert.match(document, /data-visual-direction="obsidian-silver"/u);
   assert.doesNotMatch(document, /boundary-banner/u);
   assert.doesNotMatch(document, /mode-badge/u);
-  assert.match(document, /--surface:\s*#f7f7f8/iu);
-  assert.match(document, /--ink:\s*#18181b/iu);
-  assert.match(document, /--accent:\s*#2563eb/iu);
+  assert.match(document, /color-scheme:\s*dark/iu);
+  assert.match(document, /--surface:\s*#181818/iu);
+  assert.match(document, /--ink:\s*#e5e3df/iu);
+  assert.match(document, /--accent:\s*#c9c3b8/iu);
   assert.match(document, /grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/iu);
   assert.match(document, /Segoe UI Variable/u);
+  assert.match(document, /Segoe Fluent Icons/u);
   assert.match(document, /@media\s*\(max-width:\s*699px\)/u);
-  assert.match(document, /--muted:\s*#5f6068/iu);
-  assert.match(document, /--attention-ink:\s*#9f1239/iu);
-  assert.match(document, /@media\s*\(prefers-color-scheme:\s*dark\)[\s\S]*--surface:\s*#111113/iu);
-  assert.match(document, /@media\s*\(prefers-color-scheme:\s*dark\)[\s\S]*--attention-ink:\s*#fda4af/iu);
-  assert.doesNotMatch(document, /#151714|#1d201c|#252823/iu);
+  assert.match(document, /--muted:\s*#aaa6a0/iu);
+  assert.match(document, /--attention-ink:\s*#d9ad64/iu);
+  assert.doesNotMatch(document, /prefers-color-scheme:\s*dark/iu);
   assert.match(document, /#attention-total\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
   assert.match(document, /\.attention-item strong\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
-  assert.match(document, /\.task-badge\.attention\s*,\s*\.task-badge\.active\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
+  assert.match(document, /\.task-badge\.active\s*\{[^}]*color:\s*var\(--accent-strong\)/isu);
+  assert.match(document, /\.task-badge\.attention\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
   assert.match(document, /\.dialog-attention\s*\{[^}]*color:\s*var\(--attention-ink\)/isu);
-  assert.doesNotMatch(document, /[;{]\s*color:\s*var\(--accent\)/iu);
+  assert.match(document, /aria-keyshortcuts="Control\+K Meta\+K"/u);
+  assert.match(document, /class="switch-track"/u);
   assert.match(document, /\.task-card-title,\s*\.task-next\s*\{[^}]*overflow-wrap:\s*anywhere/isu);
 }
 
@@ -76,7 +78,7 @@ test("standalone Phase 1 server exposes a token-gated GET-only board and no remo
   assert.match(script, /projectboard-readonly-snapshot/u);
   const css = await (await fetch(`${server.origin}/app.css`)).text();
   const document = `${html}\n${css}\n${script}`;
-  assertQuietOpsDocument(document);
+  assertDaybreakDocument(document);
   assert.match(document, /all-history/u);
   assert.match(document, /全部历史/u);
   assert.doesNotMatch(document, /turn\/start|thread\/(?:start|archive|delete)/u);

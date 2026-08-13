@@ -12,11 +12,11 @@ const EMBEDDED_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inlin
 const STATIC_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'";
 const CANONICAL_LANES = Object.freeze(["inbox", "planned", "running", "review", "done"]);
 const EMPTY_LANES = Object.freeze({
-  inbox: "没有历史任务",
-  planned: "只读目录不会凭标题猜测计划状态",
-  running: "当前没有 Codex 正在执行的任务",
-  review: "等待未来经过安全门槛的明确状态",
-  done: "历史对话仍可在收集箱中完整检索",
+  inbox: "这里很轻，等待新的任务进入",
+  planned: "暂无已规划任务，可以从收集箱整理",
+  running: "当前没有正在推进的任务",
+  review: "成果就绪后会在这里等待确认",
+  done: "完成的任务会在这里留下记录",
 });
 function safeSnapshotJson(snapshot) {
   return JSON.stringify(snapshot)
@@ -102,23 +102,23 @@ function staticTaskCard(task, projects, lanes) {
   const active = task.sourceStatus === "active";
   const badges = [
     project ? staticBadge(project.name, "project") : "",
-    active ? staticBadge("活动中", "active") : "",
+    active ? staticBadge("进行中", "active") : "",
     task.attention ? staticBadge(task.attention.label, "attention") : "",
-    task.archived ? staticBadge("导入归档", "archived") : "",
-    staticBadge(staticTimestamp(task.updatedAt)),
+    task.archived ? staticBadge("已归档", "archived") : "",
+    staticBadge(staticTimestamp(task.updatedAt), "time"),
   ].join("");
   const threadHref = `#projectboard-open/${encodeURIComponent(task.threadId)}`;
   const moveLinks = lanes
     .filter(({ id }) => id !== task.state)
     .map(({ id, label }) => `<label class="task-move-option"><input type="radio" name="projectboard-move-request" data-projectboard-move-thread="${escapeMarkup(task.threadId)}" data-projectboard-move-lane="${escapeMarkup(id)}" aria-label="${escapeMarkup(`把${task.title}移动到${label}`)}"><span>${escapeMarkup(label)}</span></label>`)
     .join("");
-  return `<article role="listitem" class="task-card" data-projectboard-task-id="${escapeMarkup(task.id)}" data-projectboard-thread-id="${escapeMarkup(task.threadId)}" data-projectboard-current-lane="${escapeMarkup(task.state)}"${active ? ' data-active="true"' : ""}>
+  return `<article role="listitem" class="task-card" data-state="${escapeMarkup(task.state)}" data-projectboard-task-id="${escapeMarkup(task.id)}" data-projectboard-thread-id="${escapeMarkup(task.threadId)}" data-projectboard-current-lane="${escapeMarkup(task.state)}"${active ? ' data-active="true"' : ""}>
     <a class="task-open-link" draggable="false" href="${escapeMarkup(threadHref)}" title="打开原 Codex 任务" aria-label="${escapeMarkup(`在 Codex 中打开：${task.title}`)}">
       <span class="task-card-title">${escapeMarkup(task.title)}</span>
       <span class="task-next">${escapeMarkup(task.nextAction)}</span>
       <span class="task-meta">${badges}</span>
     </a>
-    <details class="task-move-menu"><summary>移动到其他栏</summary><div class="task-move-links" role="group" aria-label="${escapeMarkup(`移动任务：${task.title}`)}">${moveLinks}</div></details>
+    <details class="task-move-menu"><summary>整理到其他栏</summary><div class="task-move-links" role="group" aria-label="${escapeMarkup(`移动任务：${task.title}`)}">${moveLinks}</div></details>
   </article>`;
 }
 
@@ -130,14 +130,14 @@ export function composeStaticEmbeddedBoardDocument(snapshot, { styles }) {
   const projects = new Map(snapshot.projects.map((project) => [project.id, project]));
   const attentionTasks = tasks.filter(({ attention }) => attention);
   const attention = attentionTasks.length === 0
-    ? '<span class="attention-empty">当前没有可由线程元数据确认的注意项</span>'
+    ? '<span class="attention-empty">现在没有需要你接手的任务</span>'
     : attentionTasks.map((task) => `<span class="attention-item"><strong>${escapeMarkup(task.attention.label)}</strong><span>${escapeMarkup(task.title)}</span></span>`).join("");
   const lanes = snapshot.aggregate.lanes.map((lane, index) => {
     const cards = lane.tasks.length === 0
       ? `<p class="empty-lane">${escapeMarkup(EMPTY_LANES[lane.id])}</p>`
       : lane.tasks.map((task) => staticTaskCard(task, projects, snapshot.aggregate.lanes)).join("");
-    return `<section class="lane" data-projectboard-lane="${escapeMarkup(lane.id)}" aria-label="${escapeMarkup(`${snapshot.aggregate.name}，第 ${index + 1}/5 列，${lane.label}`)}">
-      <div class="lane-heading"><div><h3>${escapeMarkup(lane.label)}</h3><p>${escapeMarkup(lane.description)}</p></div><span class="count-badge">${lane.tasks.length}</span></div>
+    return `<section class="lane" data-lane="${escapeMarkup(lane.id)}" data-projectboard-lane="${escapeMarkup(lane.id)}" aria-label="${escapeMarkup(`${snapshot.aggregate.name}，第 ${index + 1}/5 列，${lane.label}`)}">
+      <div class="lane-heading" data-lane="${escapeMarkup(lane.id)}"><div><h3>${escapeMarkup(lane.label)}</h3><p>${escapeMarkup(lane.description)}</p></div><span class="count-badge">${lane.tasks.length}</span></div>
       <div class="lane-list" role="list">${cards}</div>
     </section>`;
   }).join("");
@@ -149,20 +149,20 @@ export function composeStaticEmbeddedBoardDocument(snapshot, { styles }) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
+  <meta name="color-scheme" content="dark">
   <meta http-equiv="content-security-policy" content="${STATIC_CSP}">
   <title>Codex Projectboard</title>
   <style data-projectboard-embedded>${styles}</style>
 </head>
-<body data-visual-direction="quiet-ops">
+<body data-visual-direction="obsidian-silver">
   <main class="workspace">
     <section class="board-shell" aria-labelledby="project-title">
       <header class="app-bar">
-        <div class="title-block"><span class="brand-mark" aria-hidden="true"></span><div><h1>任务面板</h1><p id="catalog-summary">${snapshot.summary.projectCount} 个项目 · ${tasks.length} 个历史任务 · ${archivedCount} 个已归档</p></div></div>
-        <div class="toolbar"><span class="archive-filter">Codex 只读 · 本地编排</span></div>
+        <div class="title-block"><span class="brand-mark" aria-hidden="true"></span><div><h1>Codex 工作台</h1><p id="catalog-summary">${snapshot.summary.projectCount} 个项目 · ${tasks.length} 个任务 · ${archivedCount} 个归档</p></div></div>
+        <div class="toolbar"><span class="readonly-status"><span aria-hidden="true"></span>只读同步 · 本地编排</span></div>
       </header>
-      <div class="context-row"><div><h2 id="project-title">全部历史</h2><p id="project-path">所有工作目录</p></div><p id="sync-status">快照 ${escapeMarkup(staticTimestamp(snapshot.generatedAt))}</p></div>
-      <section class="attention-rail" aria-labelledby="attention-title"><h3 id="attention-title">需要我处理 <span id="attention-total">${attentionTasks.length}</span></h3><div class="attention-list">${attention}</div></section>
+      <div class="context-row"><div><h2 id="project-title">全部任务</h2><p id="project-path">跨项目工作视图</p></div><p id="sync-status">已同步 ${escapeMarkup(staticTimestamp(snapshot.generatedAt))}</p></div>
+      <section class="attention-rail" aria-labelledby="attention-title"><h3 id="attention-title">等你接棒 <span id="attention-total">${attentionTasks.length}</span></h3><div class="attention-list">${attention}</div></section>
       <nav class="lane-tabs" aria-label="任务状态"></nav>
       <div class="board-grid" aria-label="五栏任务看板">${lanes}</div>
     </section>
