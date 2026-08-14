@@ -217,3 +217,23 @@ test("local lane overrides change only the Projectboard projection and snapshot 
   assert.equal(task.sourceStatus, "idle", "local organization must not rewrite Codex source status");
   assert.notEqual(moved.snapshotId, base.snapshotId);
 });
+
+test("readonly projection preserves source status while deriving review attention", () => {
+  const snapshot = buildReadonlyBoardSnapshot({
+    activeThreads: [
+      thread({
+        id: "approval-thread",
+        status: { type: "active", activeFlags: ["waitingOnApproval"] },
+      }),
+    ],
+    archivedThreads: [],
+    identity,
+    generatedAt: "2026-08-14T00:00:00.000Z",
+  });
+  const task = snapshot.projects[0].lanes.find(({ id }) => id === "running").tasks[0];
+  assert.equal(task.sourceStatus, "active");
+  assert.deepEqual(task.attention, { kind: "approval", label: "等待审批" });
+  assert.equal(task.nextAction, "回到原任务，确认这次审批");
+  assert.equal("preview" in task, false);
+  assert.equal("cwd" in task, false);
+});
