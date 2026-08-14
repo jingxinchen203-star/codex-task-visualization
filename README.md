@@ -1,5 +1,8 @@
 # Codex Projectboard
 
+![Codex Projectboard project hero](assets/project-hero.png)
+
+
 一个面向 Windows 版 Codex Desktop 的本地五栏任务看板。它把当前账户中的活动与归档任务投影到 Codex 右侧工作区，方便集中查看、回到原任务，以及在本机整理栏位。
 
 > 当前版本是 Phase 1 的安全预览：读取 Codex 任务，但不修改 Codex 任务状态，不创建任务或模型回合，也不写入 Git。
